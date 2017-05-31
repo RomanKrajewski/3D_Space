@@ -1,6 +1,7 @@
-var camera, scene, controls,controls2, renderer;
+var camera, scene, orientationControls, orbitControls, renderer;
 var texture_placeholder;
 var accelerationX = accelerationY = accelerationZ = 0;
+var fingercontrols;
 
 init();
 animate();
@@ -24,37 +25,43 @@ function init() {
     context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
 
     var loader = new THREE.CubeTextureLoader();
-    loader.setPath( 'tex/cube/skybox/' );
-
-    var textureCube = loader.load( [
-        'nx.jpg', 'px.jpg',
-        'ny.jpg', 'py.jpg',
-        'pz.jpg', 'nz.jpg'
-    ] );
+    loader.setPath( './tex/cube/skybox/' );
 
     var materials = [
 
-        loadTexture( 'textures/cube/skybox/px.jpg' ), // right
-        loadTexture( 'textures/cube/skybox/nx.jpg' ), // left
-        loadTexture( 'textures/cube/skybox/py.jpg' ), // top
-        loadTexture( 'textures/cube/skybox/ny.jpg' ), // bottom
-        loadTexture( 'textures/cube/skybox/pz.jpg' ), // back
-        loadTexture( 'textures/cube/skybox/nz.jpg' )  // front
+        loadTexture( './tex/cube/skybox/px.jpg' ), // right
+        loadTexture( './tex/cube/skybox/nx.jpg' ), // left
+        loadTexture( './tex/cube/skybox/py.jpg' ), // top
+        loadTexture( './tex/cube/skybox/ny.jpg' ), // bottom
+        loadTexture( './tex/cube/skybox/pz.jpg' ), // back
+        loadTexture( './tex/cube/skybox/nz.jpg' )  // front
 
     ];
 
-    mesh = new THREE.Mesh( new THREE.BoxGeometry(1000, 1000, 1000 ,1,1,1), materials[1]);
+    mesh = new THREE.Mesh( new THREE.CubeGeometry(1000, 1000, 1000 ), materials);
+
     mesh.scale.x = - 1;
+    var standardMaterial = new THREE.MeshStandardMaterial( {color:0xE80C7A, roughness:0.3, metalness:0.7} );
+    // platform = new THREE.Mesh(new THREE.CubeGeometry(20, 1, 20), standardMaterial);
+    // platform.position.y = -5;
+    var platform = new THREE.Mesh(new THREE.ExtrudeGeometry(generatePentagon(10), {amount:1}), standardMaterial);
+    platform.position.z = -50;
     scene.add( mesh );
+    scene.add(platform);
     // scene.background = mesh;
-    light = new THREE.AmbientLight(0xFFFFFF, 0.5);
+    // light = new THREE.HemisphereLight(0xfefdc4, 0x7f848a,  1);
+    light = new THREE.HemisphereLight(0xfefdc4, 0xfefdc4,  1);
     scene.add(light);
     renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
-    controls = new THREE.DeviceOrientationControls(camera);
-    controls2 = new THREE.OrbitControls(camera, renderer.domElement);
-    document.body.appendChild( renderer.domElement );
-    camera.position.x = 0.00000001;
+
+    orientationControls = new THREE.DeviceOrientationControls(camera);
+    orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    document.getElementById("canvas_wrapper").appendChild( renderer.domElement );
+    camera.position.y = 1 ;
+
+    fingercontrols = document.getElementById("fingercontrolswitch");
 
 
 }
@@ -62,7 +69,7 @@ function init() {
 
 function loadTexture( path ) {
 
-    var texture = new THREE.Texture( texture_placeholder );
+    var texture = new THREE.Texture( );
     var material = new THREE.MeshBasicMaterial( { map: texture} );
 
     var image = new Image();
@@ -78,6 +85,19 @@ function loadTexture( path ) {
 
 }
 
+function generatePentagon(radius){
+    var shape = new THREE.Shape();
+    shape.autoClose = true;
+    shape.moveTo(radius, 0);
+    var angle = 0;
+    for(var i = 0; i<4; i++){
+        angle += (72*(Math.PI/180));
+        shape.lineTo(radius*Math.cos(angle), radius*Math.sin(angle));
+    }
+    shape.lineTo(radius,0);
+    return shape
+}
+
 function animate() {
 
     requestAnimationFrame( animate );
@@ -89,12 +109,18 @@ function animate() {
 function update() {
 
     renderer.render( scene, camera );
-    controls.update();
-    controls2.update();
+    if(fingercontrols.checked){
+        orbitControls.enabled = true;
+        // orientationControls.enabled = true;
+    }
+    else {
+        orbitControls.enabled = false;
+        orientationControls.update();
+    }
 }
 
-window.ondeviceorientation = function (event) {
-    accelerationX = event.beta* (Math.PI / 180);
-    accelerationY = event.gamma* (Math.PI / 180);
-    accelerationZ = event.alpha* (Math.PI / 180);
-}
+// window.ondeviceorientation = function (event) {
+//     accelerationX = event.beta* (Math.PI / 180);
+//     accelerationY = event.gamma* (Math.PI / 180);
+//     accelerationZ = event.alpha* (Math.PI / 180);
+// }
